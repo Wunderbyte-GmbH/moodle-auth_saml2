@@ -56,8 +56,7 @@ foreach (explode(PHP_EOL, $saml2auth->config->requestedattributes) as $attr) {
     }
     $attributes[] = $attr;
 }
-// Moodle language code does not always map to the iso code, which is preferable for xml:lang attributes.
-$lang = get_string('iso6391', 'core_langconfig');
+
 $config[$saml2auth->spname] = [
     'saml:SP',
     'entityID' => !empty($saml2auth->config->spentityid) ? $saml2auth->config->spentityid : $defaultspentityid,
@@ -65,13 +64,13 @@ $config[$saml2auth->spname] = [
     'idp' => empty($CFG->auth_saml2_disco_url) ? $idpentityid : null,
     'NameIDPolicy' => $saml2auth->config->nameidpolicy,
     'OrganizationName' => array(
-        $lang => $SITE->shortname,
+        $CFG->lang => $SITE->shortname,
     ),
     'OrganizationDisplayName' => array(
-        $lang => $SITE->fullname,
+        $CFG->lang => $SITE->fullname,
     ),
     'OrganizationURL' => array(
-        $lang => $baseurl,
+        $CFG->lang => $baseurl,
     ),
     'privatekey' => $saml2auth->spname . '.pem',
     'privatekey_pass' => get_config('auth_saml2', 'privatekeypass'),
@@ -82,7 +81,7 @@ $config[$saml2auth->spname] = [
     'WantAssertionsSigned' => $saml2auth->config->wantassertionssigned == 1,
 
     'name' => [
-        $lang => $SITE->fullname,
+        $CFG->lang => $SITE->fullname,
     ],
     'attributes' => $attributes,
     'attributes.required' => $attributesrequired,
