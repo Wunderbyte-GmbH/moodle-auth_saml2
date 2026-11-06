@@ -773,16 +773,22 @@ class auth extends \auth_plugin_base {
                 }
 
                 $this->log(__FUNCTION__ . " user '$user->username' is not in moodle so autocreating");
-                require_once($CFG->dirroot . '/user/lib.php');
+                require_once($CFG->dirroot . '/user/profile/lib.php');
 
-                // Various values that user_create_user doesn't validate or set.
+                // Various values that create_user doesn't validate or set.
                 $user->confirmed = 1;
                 $user->lastip = getremoteaddr();
                 $user->timecreated = time();
                 $user->timemodified = $user->timecreated;
                 $user->mnethostid = $CFG->mnet_localhost_id;
 
-                $user->id = \user_create_user($user, true, true);
+                if (method_exists(\core\user::class, 'create_user')) {
+                    // Moodle 5.3 and later.
+                    $user->id = \core\user::create_user($user, true, true);
+                } else {
+                    require_once($CFG->dirroot . '/user/lib.php');
+                    $user->id = \user_create_user($user, true, true);
+                }
                 $newuser = true;
                 // Store any custom profile fields.
                 profile_save_data($user);
@@ -1078,7 +1084,7 @@ class auth extends \auth_plugin_base {
     public function update_user_profile_fields(&$user, $attributes, $newuser = false) {
         global $CFG;
         if ($this->update_user_record_from_attribute_map($user, $attributes, $newuser)) {
-            require_once($CFG->dirroot . '/user/lib.php');
+            require_once($CFG->dirroot . '/user/profile/lib.php');
             if ($user->description === true) {
                 // Function get_complete_user_data() sets description = true to avoid keeping in memory.
                 // If set to true - don't update based on data from this call.
@@ -1088,7 +1094,13 @@ class auth extends \auth_plugin_base {
             // then we update the user which also fires events which other
             // plugins listen to so they have the correct user data.
             profile_save_data($user);
-            user_update_user($user, false);
+            if (method_exists(\core\user::class, 'update_user')) {
+                // Moodle 5.3 and later.
+                \core\user::update_user($user, false);
+            } else {
+                require_once($CFG->dirroot . '/user/lib.php');
+                user_update_user($user, false);
+            }
             return true;
         }
         return false;
